@@ -134,8 +134,8 @@ if __name__ == "__main__":
     view = MainWindow()
     
     desktop = QDesktopWidget()
-    width = desktop.width()*0.8;
-    height = desktop.height()*0.8;
+    width = desktop.width()*0.7;
+    height = desktop.height()*0.7;
     view.setFixedSize(width,height);
     view.show()
     app.exec_()

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/>        
+        <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    </head>
+    <body> 
+    
+    <iframe name="myIFRAME" id="myIFRAME" src="https://sky.esa.int" width="700px" height="600px"></iframe>
+    
+    <script>
+    
+        var msgId = 10;
+    
+        // outgoing methods
+        function setFov(fovDeg){
+            msgId += 1;
+            extras = 'setFov';
+            myIframe.contentWindow.postMessage({event: 'setFov', content:{fov: fovDeg}}, 'https://sky.esa.int');
+        }
+
+        function initTest(){
+            myIframe.contentWindow.postMessage({event: 'initTest'}, 'https://sky.esa.int');
+        }
+
+        // bidirectional methods
+        function getCataloguesCount(){
+            msgId += 1;
+            myIframe.contentWindow.postMessage({event: 'getCataloguesCount', msgId: msgId}, 'https://sky.esa.int');
+        }
+        
+        function goToTargetName(target){
+            msgId += 1;
+            myIframe.contentWindow.postMessage({event: 'goToTargetName', content:{targetName: target}, msgId: msgId}, 'https://sky.esa.int');
+        }
+
+        function getAvailableHiPS(wavelength){
+            msgId += 1;
+            myIframe.contentWindow.postMessage({event: 'getAvailableHiPS', content:{wavelength: wavelength}, msgId: msgId}, 'https://sky.esa.int');        
+        }
+        
+        var backend;
+        new QWebChannel(qt.webChannelTransport, function (channel) {
+            backend = channel.objects.backend;
+        });
+        
+        var myIframe = document.getElementById("myIFRAME");
+        myIframe.addEventListener("load", function() {
+            //myIframe.contentWindow.postMessage({event: 'initTest'}, 'https://sky.esa.int');
+        });
+        
+        
+
+        
+        //respond to events
+        window.addEventListener('message',function(event) {
+            alert(JSON.stringify(event.data));
+            //backend.foo(JSON.stringify(event.data));
+            backend.foo(JSON.stringify(event.data));
+            //backend.foo();
+        });
+
+                
+    </script>
+    </body>
+    
+</html>
