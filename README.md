@@ -4,7 +4,7 @@ ESASky embedded in QT (python PyQT5)
 This project is a proof of concept for the integration of ESASky (https://sky.esa.int) into a QT application developed using PyQT5.
 To try it out, run the following commands:
 
-$ get clone https://github.com/fab77/esaskyQT.git
+$ git clone https://github.com/fab77/esaskyQT.git
 
 $ python Main.py
 
