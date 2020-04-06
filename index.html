@@ -21,7 +21,7 @@
         }
 
         function initTest(){
-            myIframe.contentWindow.postMessage({event: 'initTest'}, 'https://sky.esa.int');
+            myIframe.contentWindow.postMessage({event: 'initTest', msgId: msgId}, 'https://sky.esa.int');
         }
 
         // bidirectional methods
@@ -55,7 +55,7 @@
         
         //respond to events
         window.addEventListener('message',function(event) {
-            alert(JSON.stringify(event.data));
+            //alert(JSON.stringify(event.data));
             //backend.foo(JSON.stringify(event.data));
             backend.foo(JSON.stringify(event.data));
             //backend.foo();

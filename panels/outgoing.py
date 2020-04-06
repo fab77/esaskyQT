@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QHBoxLayout, QWidget, QPushButton, QLabel, QLineEdit, QComboBox
+from astropy.table import Table
 
 class AbstractWidget(QWidget):
     
@@ -14,6 +15,9 @@ class AbstractWidget(QWidget):
         pass
     
     def onClick(self):
+        pass
+    
+    def prepareTabularOutput(self, content):
         pass
 
 class FovBox(AbstractWidget):
@@ -46,6 +50,8 @@ class FovBox(AbstractWidget):
         print ('Clicked on changeFov')
         self.esaskyWrapper.page().runJavaScript("setFov("+self.inputText.text()+")")
 
+    def prepareTabularOutput(self, content):
+        pass
 
 class GoToTargetName(AbstractWidget):
     
@@ -76,6 +82,9 @@ class GoToTargetName(AbstractWidget):
         print ('Clicked on ')
         self.esaskyWrapper.page().runJavaScript("goToTargetName('"+self.inputText.text()+"')")
     
+    def prepareTabularOutput(self, content):
+        pass
+    
 class GetAvailableHiPS(AbstractWidget):
     
     def __init__(self, esaskyWrapper):
@@ -103,6 +112,60 @@ class GetAvailableHiPS(AbstractWidget):
         print ('Clicked on ')
         self.esaskyWrapper.page().runJavaScript("getAvailableHiPS('"+self.combo.currentText()+"')")
     
+    def prepareTabularOutput(self, content):
+        print('GetAvailableHiPS->prepareTabularOutput')
+        '''
+        {'values': {
+            'INTEGRAL-IBIS RGB': {
+                'HiPS label': 'INTEGRAL-IBIS RGB', 
+                'HiPS URL': '//cdn.skies.esac.esa.int/Integral/color/', 
+                'hips_frame': 'equatorial', 
+                'maxOrder': '3', 
+                'format': 'jpg'
+                }, 
+            'INTEGRAL-IBIS 20-35 keV': {
+                'HiPS label': 'INTEGRAL-IBIS 20-35 keV', 
+                'HiPS URL': '//cdn.skies.esac.esa.int/Integral/20-35/', 
+                'hips_frame': 'equatorial', 
+                'maxOrder': '3', 
+                'format': 'jpg'
+                }, 
+            'INTEGRAL-IBIS 35-65 keV': {
+                'HiPS label': 'INTEGRAL-IBIS 35-65 keV', 
+                'HiPS URL': '//cdn.skies.esac.esa.int/Integral/35-65/', 
+                'hips_frame': 'equatorial', 
+                'maxOrder': '3', 
+                'format': 'jpg'
+                }, 
+            'INTEGRAL-IBIS 65-100 keV': {
+                'HiPS label': 'INTEGRAL-IBIS 65-100 keV', 
+                'HiPS URL': '//cdn.skies.esac.esa.int/Integral/65-100/', 
+                'hips_frame': 'equatorial', 
+                'maxOrder': '3', 
+                'format': 'jpg'
+                }, 
+            'Swift-BAT RGB': {
+                'HiPS label': 'Swift-BAT RGB', 
+                'HiPS URL': '//cdn.skies.esac.esa.int/swift_bat_flux/', 
+                'hips_frame': 'equatorial', 
+                'maxOrder': '6', 
+                'format': 'png'
+                }
+            }, 
+        'msgId': 11
+        }
+        '''
+        t = Table(names=('HiPS name', 'root URL', 'coordinate frame', 'max norder', 'format'), dtype=('S15', 'S40', 'S12', 'i2', 'S4'))
+        for key, item in content.items():
+            if key == 'values':
+                
+                for attribute, value in item.items():
+                    currRow = []
+                    for hipsColumnDetails, hipsValue in value.items():
+                        currRow.append(hipsValue)
+                    t.add_row(currRow)
+        return t
+        
 
 class CataloguesCount(AbstractWidget):
     
@@ -114,4 +177,18 @@ class CataloguesCount(AbstractWidget):
         print ('CataloguesCount -> run')
         self.esaskyWrapper.page().runJavaScript("getCataloguesCount()")
 
+    def prepareTabularOutput(self, content):
+        print('CataloguesCount->prepareTabularOutput')
+        print(content)
+        t = Table(names=('dataset', 'count'), dtype=('S20', 'i4'))
         
+        for key, item in content.items():
+            if key == 'values':
+                
+                for attribute, value in item.items():
+                    currRow = []
+                    currRow.append(attribute)
+                    currRow.append(value)
+                    t.add_row(currRow)
+        return t
+    

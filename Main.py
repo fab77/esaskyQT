@@ -4,8 +4,9 @@ from PyQt5.QtWidgets import QListWidget, QStackedWidget, QDesktopWidget, QApplic
 from PyQt5.QtWebChannel import QWebChannel
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage, QWebEngineSettings
 from panels.outgoing import AbstractWidget, FovBox, CataloguesCount, GoToTargetName, GetAvailableHiPS
-
-
+from PyQt5.Qt import QTableWidget, QTableWidgetItem
+from astropy.table import Table
+import pathlib
 
 class MainWindow(QMainWindow):
     
@@ -15,55 +16,117 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__(parent)
         
         self.esaskyBrowserWidget = ESASkyWrapper(self)
-        self.controlWidget = ControlBox(self.esaskyBrowserWidget)
+        if showCommands:
+            self.controlWidget = ControlBox(self.esaskyBrowserWidget)
         
-        _widget = QWidget()
-        _layout = QHBoxLayout(_widget)
+        _hwidget = QWidget()
+        _hlayout = QHBoxLayout()
+        _hwidget.setLayout(_hlayout)
         
-        _layout.addWidget(self.controlWidget, 1)
-        _layout.addWidget(self.esaskyBrowserWidget, 2)
+        self.tableWidget = ResultTable()
+        _vlayout = QVBoxLayout()
+        _vlayout.addWidget(_hwidget)
+        _vlayout.addWidget(self.tableWidget)
+        _vwidget = QWidget()
+        _vwidget.setLayout(_vlayout)
         
-        self.setCentralWidget(_widget)
+        if showCommands:
+            _hlayout.addWidget(self.controlWidget, 1)
+            _hlayout.addWidget(self.esaskyBrowserWidget, 2)
+        else:
+            _hlayout.addWidget(self.esaskyBrowserWidget, 1)
+        
+        # setup channel
+        self.channel = QWebChannel()
+        self.channel.registerObject('backend', self)
+        self.esaskyBrowserWidget.page().setWebChannel(self.channel)
+        
+        self.setCentralWidget(_vwidget)
+        
+        #QObject.connect(a,SIGNAL("testInit"),self.pippo,Qt.QueuedConnection)
+        
+    def pippo(self):
+        return "test"
         
     def setResult(self, result):
-        self.controlWidget.setResultText(result)
-
+        self.controlWidget.getCurrentWidget().prepareTabularOutput(result)
+        
+    @pyqtSlot(str)
+    def foo(self, arg1):
+        import json
+        mydict = json.loads(arg1)
+        
+        #print (type(self.controlWidget.getCurrentWidget()))
+        try:
+            astroTable = self.controlWidget.getCurrentWidget().prepareTabularOutput(mydict)
+            self.tableWidget.setContent(astroTable)
+        except AttributeError:
+            print ('MainWindow->foo->attribute not found')
+            
+    def setFov(self, fov):
+        self.esaskyBrowserWidget.page().runJavaScript("setFov("+str(fov)+")")
+        
+    def initTest(self):
+        print('sending initTest')
+        self.esaskyBrowserWidget.page().runJavaScript("initTest()")
+        
 class ESASkyWrapper(QWebEngineView):
 
     def __init__(self, parent):
         super().__init__()
         
         self.parent = parent
-        #url = QUrl.fromLocalFile(r"/Users/fgiordano/Workspace/esaskyQT/index.html")
-        import pathlib
+        
         pathlib.Path(__file__).parent.absolute()
         print (pathlib.Path(__file__).parent.absolute())
         path = str(pathlib.Path(__file__).parent.absolute())+'/index.html'
         url = QUrl.fromLocalFile(path)
-        self.load(url)
-
-        # setup channel
-        self.channel = QWebChannel()
-        self.channel.registerObject('backend', self)
-        self.page().setWebChannel(self.channel)
+        self.load(url)        
         self.show()
 
+class ResultTable(QWidget):
+    
+    def __init__(self):
+        super(ResultTable, self).__init__()
+        self.__layout()
         
-    @pyqtSlot(str)
-    def foo(self, arg1):
-        import json
-        mydict = json.loads(arg1)
-        self.parent.setResult(arg1)
- 
+    def __layout(self):
+         
+        
+        self.container = QWidget()
+        
+        self.tableWidget = QTableWidget()
+        
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.tableWidget) 
+        self.setLayout(self.layout)
+        
+        
+        
+    def setContent(self, astroTable):
+        
+        self.tableWidget.setRowCount(len(astroTable))
+        self.tableWidget.setColumnCount(len(astroTable.colnames))
+        self.tableWidget.setHorizontalHeaderLabels(astroTable.colnames)
+
+        rowIdx = 0
+        colIdx = 0
+        for row in astroTable:
+            for header in astroTable.colnames:
+                self.tableWidget.setItem(rowIdx, colIdx, QTableWidgetItem(str(astroTable[rowIdx][header])))
+                colIdx = colIdx + 1
+            rowIdx = rowIdx + 1
+            colIdx = 0
+        
+    
 class ControlBox(QWidget):
     
     def __init__(self, esaskyWrapper):
         super(ControlBox, self).__init__()
-        #super(ControlBox, self).__init__(parent)
         
-        #self.parentWindow = parent
         self.esaskyWrapper = esaskyWrapper
         self.__layout()
+        self.currentWidget = None
         
     def __layout(self):
         
@@ -74,10 +137,7 @@ class ControlBox(QWidget):
         self.esaskyAPIList.insertItem (3, 'goToTargetName' )
         self.esaskyAPIList.insertItem (4, 'getAvailableHiPS' )
         
-        
-        
         self.esaskyAPIList.currentRowChanged.connect(self.displayWidget)
-        
         
         emptyWidget = QWidget()
         fovWidget = FovBox(self.esaskyWrapper)
@@ -95,13 +155,16 @@ class ControlBox(QWidget):
         
         self.stack.setCurrentIndex(0)
         
-        resultWidget = QWidget()
+        
         resultLabel = QLabel('result', self)
         self.resultText = QLabel('', self)
         self.resultText.setWordWrap(True)
+        self.resultTableWidgetArea = QWidget()
         rLayout = QVBoxLayout()
         rLayout.addWidget(resultLabel)
         rLayout.addWidget(self.resultText)
+        rLayout.addWidget(self.resultTableWidgetArea)
+        resultWidget = QWidget()
         resultWidget.setLayout(rLayout)
      
         
@@ -115,19 +178,22 @@ class ControlBox(QWidget):
         self.setLayout(self.vControlBoxLayout)
 
     def displayWidget(self, i):
-        self.setResultText('')
+        #self.setResultText('')
         self.stack.setCurrentIndex(i)
-        currWidget = self.stack.widget(i)
+        self.currentWidget = self.stack.widget(i)
         try:
-            currWidget.directRun()
+            self.currentWidget.directRun()
         except AttributeError:
-            print ('attribute not found')
-        
-        
-    def setResultText(self, text):
-        self.resultText.setText(text)
+            print ('ControlBox->displayWidget->attribute not found')
+    
+    def getCurrentWidget(self):
+        return self.currentWidget    
+    
+    def setResultTable(self, tableWidget):
+        #self.resultTableWidgetArea.
+        pass
 
-
+showCommands = True
 
 if __name__ == "__main__":
     app = QApplication.instance() or QApplication(sys.argv)
@@ -138,4 +204,7 @@ if __name__ == "__main__":
     height = desktop.height()*0.8;
     view.setFixedSize(width,height);
     view.show()
+    
+    #QObject.emit(SIGNAL("testInit"))
     app.exec_()
+        
