@@ -1,4 +1,10 @@
 from PyQt5.QtWidgets import QHBoxLayout, QWidget, QPushButton, QLabel, QLineEdit, QComboBox
+'''
+    File name: Main.py
+    Author: Fabrizio Giordano
+    Date created: 05/20/2020
+    Python Version: 3.7.3
+'''
 from astropy.table import Table
 
 class AbstractWidget(QWidget):

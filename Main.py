@@ -1,3 +1,10 @@
+'''
+    File name: Main.py
+    Author: Fabrizio Giordano
+    Date created: 05/20/2020
+    Python Version: 3.7.3
+'''
+
 import sys
 from PyQt5.QtCore import pyqtSlot, QUrl, QObject, QJsonValue, QJsonDocument
 from PyQt5.QtWidgets import QListWidget, QStackedWidget, QDesktopWidget, QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QLabel, QLineEdit
