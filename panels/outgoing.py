@@ -102,7 +102,7 @@ class GetAvailableHiPS(AbstractWidget):
         label = QLabel('Wavelength: ', self)
         
         self.combo = QComboBox()
-        self.combo.addItems(["-", "All", "GAMMA_RAY", "HARD_X_RAY", "SOFT_X_RAY", "UV", "OPTICAL", "NEAR_IR", "MID_IR", "FAR_IR", "SUBMM", "RADIO", "OTHERS"])
+        self.combo.addItems(["-", "GAMMA_RAY", "HARD_X_RAY", "SOFT_X_RAY", "UV", "OPTICAL", "NEAR_IR", "MID_IR", "FAR_IR", "SUBMM", "RADIO", "OTHERS"])
         self.combo.currentIndexChanged.connect(self.onClick)
         
         self.hLayout = QHBoxLayout()
